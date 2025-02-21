@@ -162,3 +162,6 @@ cython_debug/
 #.idea/
 
 example_use.ipynb
+humbert_debiased.pt
+src/humbert_classification/humbert_debiased.pt
+data/*

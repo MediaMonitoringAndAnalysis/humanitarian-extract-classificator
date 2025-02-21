@@ -2,6 +2,7 @@ import torch
 from typing import List
 from tqdm import tqdm
 from copy import copy
+import gc
 
 
 def _postprocess_classification_predictions(original_tags: List[str]):
@@ -98,13 +99,15 @@ class ClassificationInference:
         ):
             excerpts_one_batch = excerpts[i : i + self.batch_size]
             max_len = min(
-                256, int(1.5 * max([len(x.split()) for x in excerpts_one_batch]))
+                256, int(1.3 * max([len(x.split()) for x in excerpts_one_batch]))
             )
 
             all_ratios_one_batch = self.classification_model.custom_predict(
                 excerpts_one_batch, max_len=max_len
             )
             all_ratios.extend(all_ratios_one_batch)
+            
+            gc.collect()
 
         final_tags = [
             [k for k, v in x.items() if v > prediction_ratio] for x in all_ratios
