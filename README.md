@@ -42,7 +42,7 @@ After obtaining the models, place them in the main repository folder.
 for inference:
 
 ```
-from main import hum_classification
+from main import humbert_classification
 from typing import List
 
 
@@ -57,9 +57,12 @@ test_examples: List[str] = [
 # predicion_rati<1.0 will favor recall.
 predicion_ratio: float = 1.0
 
-outputs = hum_classification(test_examples, prediction_ratio=predicion_ratio)
+outputs = humbert_classification(test_examples, prediction_ratio=predicion_ratio)
 ```
 
+
+## TODO: add readme for level2 classification
+...
 
 ## License
 
