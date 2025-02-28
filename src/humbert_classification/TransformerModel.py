@@ -89,12 +89,12 @@ class TransformerArchitecture(torch.nn.Module):
         self.activation_function = nn.SELU()
 
     def forward(self, inputs):
-        
+
         fith_layer_transformer_output = self.common_backbone(
             inputs["ids"],
             attention_mask=inputs["mask"],
         ).last_hidden_state
-        
+
         encoder_outputs = [
             self.pool(
                 {
@@ -150,7 +150,7 @@ class LoggedTransformerModel(torch.nn.Module):
         self.tokenizer = trained_model.tokenizer
         self.tagname_to_tagid = trained_model.tagname_to_tagid
         self.val_params = trained_model.val_params
-        
+
     def forward(self, inputs):
         output = self.trained_architecture(inputs)
         return output
@@ -163,7 +163,8 @@ class LoggedTransformerModel(torch.nn.Module):
     def custom_predict(
         self,
         dataset,
-        max_len: int = 128
+        max_len: int,
+        prediction_ratio: float = 1.0,
     ):
         """
         1) get raw predictions
@@ -200,10 +201,15 @@ class LoggedTransformerModel(torch.nn.Module):
         final_predictions = logit_predictions.numpy() / thresholds
 
         outputs = [
-            {
-                tagname: final_predictions[i, tagid]
+            # {
+            #     tagname: final_predictions[i, tagid]
+            #     for tagname, tagid in self.tagname_to_tagid.items()
+            # }
+            [
+                tagname
                 for tagname, tagid in self.tagname_to_tagid.items()
-            }
+                if final_predictions[i, tagid] >= prediction_ratio
+            ]
             for i in range(logit_predictions.shape[0])
         ]
 

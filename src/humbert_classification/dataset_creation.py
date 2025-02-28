@@ -103,7 +103,7 @@ class ExcerptsDataset(Dataset):
         self.tagname_to_tagid = tagname_to_tagid
         self.tagid_to_tagname = list(tagname_to_tagid.keys())
         self.max_len = max_len
-
+        
     def encode_example(self, excerpt_text: str, index=None, as_batch: bool = False):
         inputs = self.tokenizer(
             excerpt_text,
