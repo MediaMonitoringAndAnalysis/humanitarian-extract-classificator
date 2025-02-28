@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from typing import List, Dict
 import shutil
-from collections import defaultdict
 import os
 import json
 import sys
@@ -9,7 +8,6 @@ import dotenv
 import torch
 import pandas as pd
 from tqdm import tqdm
-from datasets import load_dataset
 
 dotenv.load_dotenv()
 
@@ -26,10 +24,12 @@ torch.autograd.set_detect_anomaly(True)
 
 from src.api_classification.zero_shot_second_level import (
     _generate_one_label_zero_shot_classification_results,
+    _load_level2_definitions_dataset,
 )
 
 from src.api_classification.zero_shot_assessment_problems import (
     _generate_zero_shot_assessment_problems_classification_prompts,
+    _load_level2_problems_dataset,
 )
 
 
@@ -60,30 +60,6 @@ def humbert_classification(
     return classification_results
 
 
-def _load_level2_definitions_dataset(
-    hf_dataset_name: str = "Sfekih/humanitarian_taxonomy_level2_definitions", hf_token: str = os.getenv("hf_token")
-) -> Dict[str, Dict[str, str]]:
-    dataset = load_dataset(hf_dataset_name, token=hf_token)
-    dataset_df = pd.DataFrame(dataset["train"]).drop(columns=["__index_level_0__"])
-    level1_to_level2_definitions = defaultdict(dict)
-    for index, row in dataset_df.iterrows():
-        level1 = f"{row['Task']}->{row['level1']}"
-        level1_to_level2_definitions[level1][row["level2"]] = row["Definition"]
-    return level1_to_level2_definitions
-
-
-def _load_level2_problems_dataset(
-    hf_dataset_name: str = "Sfekih/humanitarian_problems_questions", hf_token: str = os.getenv("hf_token")
-) -> Dict[str, Dict[str, str]]:
-    dataset = load_dataset(hf_dataset_name, token=hf_token)
-    dataset_df = pd.DataFrame(dataset["train"])
-    level1_to_level2_problems = defaultdict(lambda: defaultdict(dict))
-    for index, row in dataset_df.iterrows():
-        level1 = f"{row['task']}->{row['level1']}"
-        level1_to_level2_problems[level1][row["level2"]][row["problem"]] = row[
-            "question(s)"
-        ]
-    return level1_to_level2_problems
 
 
 def level2_classification(
@@ -106,7 +82,6 @@ def level2_classification(
     level1_to_level2_definitions = _load_level2_definitions_dataset(
         hf_dataset_name=hf_dataset_name, hf_token=hf_token
     )
-    print(level1_to_level2_definitions.keys())
 
     # useful for not rerunning everything again incase of an error or a bug
     tmp_save_folder_path = os.path.join(save_folder_path, "tmp")

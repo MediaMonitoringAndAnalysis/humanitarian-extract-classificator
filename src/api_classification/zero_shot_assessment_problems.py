@@ -2,6 +2,9 @@ from typing import List, Dict
 import os
 import json
 from openai_multiproc_inference import get_answers
+from datasets import load_dataset
+import pandas as pd
+from collections import defaultdict
 
 
 classification_system_prompt = """
@@ -14,6 +17,19 @@ The output is a list with no entries, one entry, or multiple entries.
 If unsure about a problem, return it anyways (high recall is crucial).
 """
 
+
+def _load_level2_problems_dataset(
+    hf_dataset_name: str = "Sfekih/humanitarian_problems_questions", hf_token: str = os.getenv("hf_token")
+) -> Dict[str, Dict[str, str]]:
+    dataset = load_dataset(hf_dataset_name, token=hf_token)
+    dataset_df = pd.DataFrame(dataset["train"])
+    level1_to_level2_problems = defaultdict(lambda: defaultdict(dict))
+    for index, row in dataset_df.iterrows():
+        level1 = f"{row['task']}->{row['level1']}"
+        level1_to_level2_problems[level1][row["level2"]][row["problem"]] = row[
+            "question(s)"
+        ]
+    return level1_to_level2_problems
 
 def _generate_zero_shot_assessment_problems_classification_prompts(
     entries: List[str],
