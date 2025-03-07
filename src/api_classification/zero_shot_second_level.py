@@ -1,7 +1,7 @@
 from typing import List, Dict
 import os
 import json
-from openai_multiproc_inference import get_answers
+from llm_multiprocessing_inference import get_answers
 from datasets import load_dataset
 import pandas as pd
 from collections import defaultdict
