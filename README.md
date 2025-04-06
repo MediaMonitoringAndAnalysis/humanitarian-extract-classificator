@@ -34,7 +34,8 @@ This repository provides the resources to load and run the classification models
    ```
    
 3. **Load Pre-trained Models**
-Pre-trained models are not included in the repository. To access the models, please contact `selimfek@gmail.com``.
+   3.1. Download the model from google drive: [here](https://drive.google.com/file/d/1nY_rV2Eqjxe4dCmF2V_5YCJjcTYFMLG8/view?usp=sharing)
+   3.2. Place the model in `src/humbert_classification`
 
 After obtaining the models, place them in the main repository folder.
 
