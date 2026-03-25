@@ -1,9 +1,13 @@
+import os
 import torch
+import gdown
 from typing import List
 from tqdm import tqdm
 from copy import copy
 import gc
 from nltk.tokenize import sent_tokenize, word_tokenize
+
+_GDRIVE_MODEL_ID = "1nY_rV2Eqjxe4dCmF2V_5YCJjcTYFMLG8"
 
 
 def _postprocess_classification_predictions(original_tags: List[str]):
@@ -60,6 +64,9 @@ def _postprocess_classification_predictions(original_tags: List[str]):
 
 class ClassificationInference:
     def __init__(self, model_path: str = "humbert_debiased.pt"):
+        if not os.path.exists(model_path):
+            print(f"Model file '{model_path}' not found. Downloading from Google Drive...")
+            gdown.download(id=_GDRIVE_MODEL_ID, output=model_path, quiet=False)
         self.classification_model = torch.load(model_path, weights_only=False)
         self.classification_model.tokenizer.split_special_tokens = False
         self.classification_model.tokenizer.pad_token = "<pad>"

@@ -12,7 +12,7 @@ from tqdm import tqdm
 dotenv.load_dotenv()
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
+openai_api_key= os.getenv("openai_api_key")
 # import logging
 # torch._logging.set_logs(dynamo = logging.INFO)
 
@@ -60,12 +60,10 @@ def humbert_classification(
     return classification_results
 
 
-
-
 def level2_classification(
     entries: List[str],
     level1_classifications: List[List[str]],
-    api_key: str = os.getenv("openai_api_key"),
+    api_key: str = openai_api_key,
     hf_dataset_name: str = "Sfekih/humanitarian_taxonomy_level2_definitions",
     hf_token: str = os.getenv("hf_token"),
     save_folder_path: os.PathLike = os.path.join(
@@ -133,7 +131,7 @@ def level2_classification(
 def level2_problems_classification(
     entries: List[str],
     level2_classifications: List[List[str]],
-    api_key: str = os.getenv("openai_api_key"),
+    api_key: str = openai_api_key,
     hf_dataset_name: str = "Sfekih/humanitarian_problems_questions",
     hf_token: str = os.getenv("hf_token"),
     save_folder_path: os.PathLike = os.path.join(
