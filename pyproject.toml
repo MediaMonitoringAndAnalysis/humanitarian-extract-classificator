@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "humanitarian-extract-classificator"
+version = "0.1.0"
+description = "Inference framework for humanitarian text classification using debiased transformer models"
+readme = "README.md"
+license = { text = "AGPL-3.0" }
+requires-python = ">=3.9"
+dependencies = [
+    "transformers>=4.45",
+    "torch>=2.4",
+    "tqdm>=4.66",
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "nltk",
+    "datasets",
+    "gdown",
+    "llm_multiprocessing_inference>=0.1.0",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+api = ["flask"]
+
+[tool.setuptools.packages.find]
+include = ["humanitarian_extract_classificator*"]

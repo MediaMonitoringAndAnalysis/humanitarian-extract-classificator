@@ -1,4 +1,5 @@
 import os
+import sys
 import torch
 import gdown
 from typing import List
@@ -8,6 +9,15 @@ import gc
 from nltk.tokenize import sent_tokenize, word_tokenize
 
 _GDRIVE_MODEL_ID = "1nY_rV2Eqjxe4dCmF2V_5YCJjcTYFMLG8"
+
+# Directory of this file — needed so torch.load can find sibling modules
+# (pooling, TransformerModel, dataset_creation) by their original flat names
+# during unpickling.
+_MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+_DEFAULT_MODEL_PATH = os.path.join(
+    os.path.expanduser("~"), ".cache", "humanitarian_extract_classificator", "humbert_debiased.pt"
+)
 
 
 def _postprocess_classification_predictions(original_tags: List[str]):
@@ -63,20 +73,31 @@ def _postprocess_classification_predictions(original_tags: List[str]):
 
 
 class ClassificationInference:
-    def __init__(self, model_path: str = "humbert_debiased.pt"):
+    def __init__(self, model_path: str = None):
+        if model_path is None:
+            model_path = _DEFAULT_MODEL_PATH
+
         if not os.path.exists(model_path):
-            print(f"Model file '{model_path}' not found. Downloading from Google Drive...")
+            os.makedirs(os.path.dirname(model_path), exist_ok=True)
+            print(f"Model not found at '{model_path}'. Downloading from Google Drive...")
             gdown.download(id=_GDRIVE_MODEL_ID, output=model_path, quiet=False)
-        self.classification_model = torch.load(model_path, weights_only=False)
+
+        # torch.load unpickling requires the module classes (pooling, TransformerModel,
+        # dataset_creation) to be importable by their original flat names.
+        sys.path.insert(0, _MODULE_DIR)
+        try:
+            self.classification_model = torch.load(model_path, weights_only=False)
+        finally:
+            sys.path.remove(_MODULE_DIR)
+
         self.classification_model.tokenizer.split_special_tokens = False
         self.classification_model.tokenizer.pad_token = "<pad>"
         self.classification_model.tokenizer.pad_token_id = 1
-        self.classification_model.trained_architecture.common_backbone.attn_implementation="eager"
+        self.classification_model.trained_architecture.common_backbone.attn_implementation = "eager"
         self.classification_model.trained_architecture.common_backbone.encoder.gradient_checkpointing = (
             False
         )
         self.classification_model.trained_architecture.eval()
-        # self.classification_model.trained_architecture.freeze()
         self.classification_model.val_params["num_workers"] = 0
         self.classification_model.tokenizer._in_target_context_manager = False
         for param in self.classification_model.trained_architecture.parameters():
@@ -90,13 +111,12 @@ class ClassificationInference:
         self.classification_model.trained_architecture.to(
             self.classification_model.testing_device
         )
-        
+
     def generate_predictions_by_sentence(
         self,
-        test_entries: List[str], 
+        test_entries: List[str],
         prediction_ratio: float = 1.0,
     ):
-        # Split all entries into sentences while keeping track of original entry indices
         all_sentences = []
         entry_indices = []
         for i, entry in enumerate(test_entries):
@@ -104,22 +124,21 @@ class ClassificationInference:
             all_sentences.extend(sentences)
             entry_indices.extend([i] * len(sentences))
 
-        # Get predictions for all sentences at once
         max_len = self._get_max_len(all_sentences)
-        all_predictions = self.classification_model.custom_predict(all_sentences, max_len=max_len, prediction_ratio=prediction_ratio)
+        all_predictions = self.classification_model.custom_predict(
+            all_sentences, max_len=max_len, prediction_ratio=prediction_ratio
+        )
 
-        # Regroup predictions by original entry
         predictions = [[] for _ in test_entries]
         for i, preds in enumerate(all_predictions):
             entry_idx = entry_indices[i]
             predictions[entry_idx].extend(preds)
-        
-        # Remove duplicates and sort for each entry
+
         predictions = [sorted(list(set(entry_preds))) for entry_preds in predictions]
         return predictions
-    
+
     def _get_max_len(self, excerpts: List[str]):
-        return int(min(512, 1.5*max([len(word_tokenize(e)) for e in excerpts])))
+        return int(min(512, 1.5 * max([len(word_tokenize(e)) for e in excerpts])))
 
     def __call__(
         self,
@@ -129,31 +148,32 @@ class ClassificationInference:
         prediction_ratio: float = 1.05,
     ) -> List[List[str]]:
         """
-        prediction_ratio: if None: return ratio between predited probability and optimal threshold, otherwise return labels with ratio > prediction_ratio
+        prediction_ratio: if None: return ratio between predicted probability and optimal
+        threshold, otherwise return labels with ratio > prediction_ratio
         """
         self.batch_size = batch_size
         self.classification_model.val_params["batch_size"] = batch_size
         final_tags = []
-        # print(excerpts, self.batch_size)
         for i in tqdm(
             range(0, len(excerpts), self.batch_size),
             desc="Getting classification predictions",
         ):
             excerpts_one_batch = excerpts[i : i + self.batch_size]
             if predict_by_sentence:
-                all_predictions_one_batch = self.generate_predictions_by_sentence(excerpts_one_batch, prediction_ratio=prediction_ratio)
+                all_predictions_one_batch = self.generate_predictions_by_sentence(
+                    excerpts_one_batch, prediction_ratio=prediction_ratio
+                )
             else:
                 max_len = self._get_max_len(excerpts_one_batch)
-                all_predictions_one_batch: List[List[str]] = self.classification_model.custom_predict(
-                    excerpts_one_batch, max_len=max_len, prediction_ratio=prediction_ratio
+                all_predictions_one_batch: List[List[str]] = (
+                    self.classification_model.custom_predict(
+                        excerpts_one_batch, max_len=max_len, prediction_ratio=prediction_ratio
+                    )
                 )
             final_tags.extend(all_predictions_one_batch)
-            
+
             gc.collect()
 
-        # final_tags = [
-        #     [k for k, v in x.items() if v > prediction_ratio] for x in all_ratios
-        # ]
         final_tags = [
             _postprocess_classification_predictions(one_entry_tags)
             for one_entry_tags in final_tags

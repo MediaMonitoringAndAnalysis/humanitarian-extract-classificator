@@ -6,64 +6,61 @@ This repository provides the tools necessary for performing inference using clas
 
 The **Humanitarian Classification Framework** is designed to classify humanitarian texts into predefined categories to support analysts, organizations, and decision-makers in the humanitarian sector. By utilizing debiased models, the framework ensures that classification results are fairer and less influenced by inherent biases in the data.
 
-This repository provides the resources to load and run the classification models on new, unseen humanitarian extracts (of 1 to 4 sentences).
-
 ## Features
 
 - **Pre-trained models** on humanitarian data (HumSet).
 - **Debiasing techniques** integrated into the model pipeline to enhance fairness and robustness.
 - **Easy-to-use inference scripts** for fast classification of humanitarian documents.
+- **Auto model download** — the HumBERT model is fetched automatically on first use.
 
-## How to Use
+## Installation
 
-1. **Clone the Repository**
-
-   First, clone the repository to your local machine:
-
-   ```bash
-   git clone https://github.com/yourusername/humanitarian-classification-inference.git
-   cd humanitarian-classification-inference
-   ```
-
-2. **Install Dependencies**
-
-   The repository includes a requirements.txt file to help set up the necessary Python packages:
-
-   ```
-   pip install -r requirements.txt
-   ```
-   
-3. **Load Pre-trained Models**
-   3.1. Download the model from google drive: [here](https://drive.google.com/file/d/1nY_rV2Eqjxe4dCmF2V_5YCJjcTYFMLG8/view?usp=sharing)
-   3.2. Place the model in `src/humbert_classification`
-
-After obtaining the models, place them in the main repository folder.
-
-4. **Inference**
-for inference:
-
+```bash
+pip install .
 ```
-from main import humbert_classification
-from typing import List
 
+Or directly from the repository:
+
+```bash
+pip install git+https://github.com/MediaMonitoringAndAnalysis/humanitarian-extract-classificator
+```
+
+The HumBERT model (`humbert_debiased.pt`) is downloaded automatically to `~/.cache/humanitarian_extract_classificator/` on first use. No manual download required.
+
+## Usage
+
+```python
+from humanitarian_extract_classificator import humbert_classification
+from typing import List
 
 test_examples: List[str] = [
     "This is a test sentence",
     "This is another test sentence",
 ]
 
-# The prediction_ratio is the decision boundary between the ratio between the predicte dprobability ands the optimal decision boundary threshold. 
-# predicion_ratio=1.0 will maximize the F1 score
-# predicion_rati>1.0 will favor precision.
-# predicion_rati<1.0 will favor recall.
-predicion_ratio: float = 1.0
-
-outputs = humbert_classification(test_examples, prediction_ratio=predicion_ratio)
+# prediction_ratio=1.0 maximises F1 score
+# prediction_ratio>1.0 favours precision
+# prediction_ratio<1.0 favours recall
+outputs = humbert_classification(test_examples, prediction_ratio=1.0)
+print(outputs)
 ```
 
+### Level-2 classification (requires OpenAI API key)
 
-## TODO: add readme for level2 classification
-...
+```python
+from humanitarian_extract_classificator import (
+    humbert_classification,
+    level2_classification,
+    level2_problems_classification,
+)
+import os
+
+os.environ["OPENAI_API_KEY"] = "..."
+
+level1 = humbert_classification(test_examples)
+level2 = level2_classification(entries=test_examples, level1_classifications=level1)
+problems = level2_problems_classification(entries=test_examples, level2_classifications=level2)
+```
 
 ## License
 
