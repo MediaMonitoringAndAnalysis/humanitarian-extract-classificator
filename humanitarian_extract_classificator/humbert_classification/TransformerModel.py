@@ -217,7 +217,7 @@ class LoggedTransformerModel(torch.nn.Module):
         else:
             outputs = [
                 {
-                    tagname: round(final_predictions[i, tagid], 2)
+                    tagname: round(final_predictions[i, tagid], 2).item()
                     for tagname, tagid in self.tagname_to_tagid.items()
                 }
                 for i in range(logit_predictions.shape[0])
