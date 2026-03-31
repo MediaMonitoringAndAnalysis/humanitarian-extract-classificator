@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from typing import Dict, List
+from typing import Dict, List, Optional
 from transformers import AutoModel
 from dataset_creation import ExcerptsDataset
 import numpy as np
@@ -165,6 +165,7 @@ class LoggedTransformerModel(torch.nn.Module):
         dataset,
         max_len: int,
         prediction_ratio: float = 1.0,
+        return_ratio: bool = False,
     ):
         """
         1) get raw predictions
@@ -200,17 +201,26 @@ class LoggedTransformerModel(torch.nn.Module):
         thresholds = np.array(list(self.optimal_thresholds.values()))
         final_predictions = logit_predictions.numpy() / thresholds
 
-        outputs = [
-            # {
-            #     tagname: final_predictions[i, tagid]
-            #     for tagname, tagid in self.tagname_to_tagid.items()
-            # }
-            [
-                tagname
-                for tagname, tagid in self.tagname_to_tagid.items()
-                if final_predictions[i, tagid] >= prediction_ratio
+        if not return_ratio:
+            outputs = [
+                # {
+                #     tagname: final_predictions[i, tagid]
+                #     for tagname, tagid in self.tagname_to_tagid.items()
+                # }
+                [
+                    tagname
+                    for tagname, tagid in self.tagname_to_tagid.items()
+                    if final_predictions[i, tagid] >= prediction_ratio
+                ]
+                for i in range(logit_predictions.shape[0])
             ]
-            for i in range(logit_predictions.shape[0])
-        ]
+        else:
+            outputs = [
+                {
+                    tagname: round(final_predictions[i, tagid], 2)
+                    for tagname, tagid in self.tagname_to_tagid.items()
+                }
+                for i in range(logit_predictions.shape[0])
+            ]
 
         return outputs
