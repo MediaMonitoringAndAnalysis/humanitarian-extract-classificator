@@ -20,6 +20,7 @@ def humbert_classification(
     batch_size: int = 32,
     prediction_ratio: float = 1.00,
     model_path: str = None,
+    return_ratio: bool = False,
 ) -> List[List[str]]:
     """
     Classify humanitarian text excerpts using the HumBERT debiased model.
@@ -41,7 +42,12 @@ def humbert_classification(
     )
 
     pipeline = ClassificationInference(model_path=model_path)
-    return pipeline(text, batch_size=batch_size, prediction_ratio=prediction_ratio)
+    return pipeline(
+        text,
+        batch_size=batch_size,
+        prediction_ratio=prediction_ratio,
+        return_ratio=return_ratio,
+    )
 
 
 def level2_classification(
@@ -50,7 +56,9 @@ def level2_classification(
     api_key: str = None,
     hf_dataset_name: str = "Sfekih/humanitarian_taxonomy_level2_definitions",
     hf_token: str = None,
-    save_folder_path: os.PathLike = os.path.join("data", "predictions", "classification_results"),
+    save_folder_path: os.PathLike = os.path.join(
+        "data", "predictions", "classification_results"
+    ),
     model: str = "gpt-4o-mini",
     pipeline: str = "OpenAI",
 ) -> List[List[str]]:
@@ -130,7 +138,9 @@ def level2_problems_classification(
     api_key: str = None,
     hf_dataset_name: str = "Sfekih/humanitarian_problems_questions",
     hf_token: str = None,
-    save_folder_path: os.PathLike = os.path.join("data", "predictions", "classification_results"),
+    save_folder_path: os.PathLike = os.path.join(
+        "data", "predictions", "classification_results"
+    ),
     model: str = "gpt-4o-mini",
     pipeline: str = "OpenAI",
 ) -> List[List[str]]:
@@ -168,12 +178,16 @@ def level2_problems_classification(
         len(level2_data) for level2_data in level1_to_level2_definitions.values()
     )
 
-    with tqdm(total=n_problem_definitions, desc="Level 2 Problems Classification") as pbar:
+    with tqdm(
+        total=n_problem_definitions, desc="Level 2 Problems Classification"
+    ) as pbar:
         for tagname_level1, level2_data in level1_to_level2_definitions.items():
             for tagname_level2, level2problems in level2_data.items():
                 save_path = os.path.join(
                     tmp_save_folder_path,
-                    f"{tagname_level1}_{tagname_level2}_problems.json".replace("/", "_"),
+                    f"{tagname_level1}_{tagname_level2}_problems.json".replace(
+                        "/", "_"
+                    ),
                 )
                 if not os.path.exists(save_path):
                     _generate_zero_shot_assessment_problems_classification_prompts(
@@ -191,7 +205,9 @@ def level2_problems_classification(
 
     final_classifications = [[] for _ in entries]
     for one_level1_classification in level1_to_level2_definitions.keys():
-        for tagname_level2 in level1_to_level2_definitions[one_level1_classification].keys():
+        for tagname_level2 in level1_to_level2_definitions[
+            one_level1_classification
+        ].keys():
             with open(
                 os.path.join(
                     tmp_save_folder_path,
