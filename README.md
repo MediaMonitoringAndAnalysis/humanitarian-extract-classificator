@@ -209,38 +209,6 @@ top_tag = max(ratio_outputs[0], key=ratio_outputs[0].get)
 
 ---
 
-## Tag Taxonomy Overview
-
-```mermaid
-mindmap
-  root((HumSet Tags))
-    Pillars 1D
-      Context
-        Politics · Economics · Environment
-        Socio-cultural · Security · Demographic
-      Shock-Event
-        Type and characteristics
-        Hazards & threats · Aggravating factors
-    Pillars 2D
-      Impact
-        Impact on people · Impact on systems
-        Drivers · Number of people affected
-      Humanitarian Conditions
-        Living standards · Physical and mental well being
-        Coping mechanisms · Number of people in need
-      Capacities & Response
-        International organizations
-        Government and local authorities
-    Sectors
-      Food Security · Nutrition · Health
-      Shelter · WASH · Protection
-      Education · Livelihoods · Logistics
-    Secondary Tags
-      Displaced · Gender · Specific Needs Groups
-```
-
----
-
 ## License
 
 AGPL v3 — any derivative works must be open-sourced under the same license.
