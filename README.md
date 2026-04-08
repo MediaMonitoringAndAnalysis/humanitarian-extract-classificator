@@ -213,4 +213,4 @@ top_tag = max(ratio_outputs[0], key=ratio_outputs[0].get)
 
 AGPL v3 — any derivative works must be open-sourced under the same license.
 
-For questions, support, or model access: `selimfek@gmail.com`
+For questions, support: `selimfek@gmail.com`
